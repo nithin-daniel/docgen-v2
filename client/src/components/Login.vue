@@ -1,12 +1,51 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { useAuthStore } from '../stores/auth'
 
+const router = useRouter()
+const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
+const error = ref('')
+const isLoading = ref(false)
 
-const handleLogin = () => {
-  // TODO: Implement login logic
-  console.log('Login attempt:', { email: email.value, password: password.value })
+const handleLogin = async () => {
+  // Reset error
+  error.value = ''
+
+  try {
+    isLoading.value = true
+    const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
+      email: email.value,
+      password: password.value
+    })
+
+    console.log('Login response:', response.data)
+
+    // Store auth data using the store
+    authStore.setAuthData({
+      user: response.data.user,
+      token: response.data.token
+    })
+
+    // Get the user role from the response
+    const userRole = response.data.user.role
+
+    // Debug log
+    console.log('User role:', userRole)
+    console.log('User data:', response.data.user)
+
+    // Redirect to admin page
+    console.log('Redirecting to admin...')
+    await router.push('/admin')
+  } catch (err) {
+    console.error('Login error:', err)
+    error.value = err.response?.data?.message || 'An error occurred during login'
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
@@ -17,6 +56,11 @@ const handleLogin = () => {
       <div class="text-center">
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">Welcome back</h2>
         <p class="mt-2 text-sm text-gray-600">Sign in to your account</p>
+      </div>
+
+      <!-- Error Message -->
+      <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <span class="block sm:inline">{{ error }}</span>
       </div>
 
       <!-- Form -->
@@ -58,9 +102,10 @@ const handleLogin = () => {
 
         <!-- Submit Button -->
         <div>
-          <button type="submit"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
-            Sign in
+          <button type="submit" :disabled="isLoading"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span v-if="isLoading">Signing in...</span>
+            <span v-else>Sign in</span>
           </button>
         </div>
 

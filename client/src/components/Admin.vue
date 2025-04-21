@@ -1,10 +1,26 @@
 <template>
-    <div class="min-h-screen bg-gray-100 p-6 mt-20"> <!-- Added mt-20 for top margin -->
-        <div class="max-w-7xl mx-auto">
+    <div class="min-h-screen bg-gray-100">
+        <!-- Navbar -->
+        <Navbar />
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto p-6 mt-16">
             <!-- Stats Card -->
             <div class="bg-white rounded-lg shadow p-6 mb-8">
-                <h3 class="text-lg font-medium text-gray-600">Total Documents Generated</h3>
-                <p class="text-4xl font-bold text-indigo-600 mt-2">{{ totalDocs }}</p>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-600">Total Documents Generated</h3>
+                        <p class="text-4xl font-bold text-indigo-600 mt-2">{{ totalDocs }}</p>
+                    </div>
+                    <router-link to="/doc"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Generate New Document
+                    </router-link>
+                </div>
             </div>
 
             <!-- Documents List -->
@@ -32,15 +48,12 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <tr v-for="doc in documents" :key="doc._id" class="hover:bg-gray-50">
                                     <td class="px-6 py-6 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        <!-- Updated py-6 for more spacing -->
                                         {{ doc.documentType }}
                                     </td>
                                     <td class="px-6 py-6 whitespace-nowrap text-sm text-gray-500">
-                                        <!-- Updated py-6 for more spacing -->
                                         {{ formatDate(doc.createdAt) }}
                                     </td>
                                     <td class="px-6 py-6 whitespace-nowrap text-sm space-x-3">
-                                        <!-- Updated py-6 and space-x-3 -->
                                         <button @click="viewDocument(doc.documentUrl)"
                                             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none"
@@ -74,9 +87,13 @@
 
 <script>
 import axios from 'axios';
+import Navbar from './Navbar.vue';
 
 export default {
     name: 'Admin',
+    components: {
+        Navbar
+    },
     data() {
         return {
             documents: [
@@ -115,18 +132,6 @@ export default {
         }
     },
     methods: {
-        // Comment out or remove the axios call temporarily to use dummy data
-        async fetchDocuments() {
-            // Using dummy data instead of API call
-            /*try {
-                const userId = localStorage.getItem('userId');
-                const response = await axios.get(`http://localhost:5000/api/documents/user/${userId}`);
-                this.documents = response.data;
-                this.totalDocs = this.documents.length;
-            } catch (error) {
-                console.error('Error fetching documents:', error);
-            }*/
-        },
         formatDate(date) {
             return new Date(date).toLocaleDateString();
         },
@@ -141,10 +146,6 @@ export default {
             link.click();
             document.body.removeChild(link);
         }
-    },
-    mounted() {
-        // No need to fetch since we're using dummy data
-        // this.fetchDocuments();
     }
 }
 </script>

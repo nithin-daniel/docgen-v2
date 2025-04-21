@@ -1,19 +1,45 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
 
+const router = useRouter()
 const fullName = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const error = ref('')
+const isLoading = ref(false)
 
-const handleSignup = () => {
-    // TODO: Implement signup logic
-    console.log('Signup attempt:', {
-        fullName: fullName.value,
-        email: email.value,
-        password: password.value,
-        confirmPassword: confirmPassword.value
-    })
+const handleSignup = async () => {
+    // Reset error
+    error.value = ''
+
+    // Validate passwords match
+    if (password.value !== confirmPassword.value) {
+        error.value = 'Passwords do not match'
+        return
+    }
+
+    try {
+        isLoading.value = true
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/signup`, {
+            fullName: fullName.value,
+            email: email.value,
+            password: password.value
+        })
+
+        // Store token in localStorage
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+
+        // Redirect to home page
+        router.push('/')
+    } catch (err) {
+        error.value = err.response?.data?.message || 'An error occurred during signup'
+    } finally {
+        isLoading.value = false
+    }
 }
 </script>
 
@@ -24,6 +50,12 @@ const handleSignup = () => {
             <div class="text-center">
                 <h2 class="mt-6 text-3xl font-extrabold text-gray-900">Create an account</h2>
                 <p class="mt-2 text-sm text-gray-600">Start generating documents today</p>
+            </div>
+
+            <!-- Error Message -->
+            <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+                role="alert">
+                <span class="block sm:inline">{{ error }}</span>
             </div>
 
             <!-- Form -->
@@ -74,9 +106,10 @@ const handleSignup = () => {
 
                 <!-- Submit Button -->
                 <div>
-                    <button type="submit"
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
-                        Sign up
+                    <button type="submit" :disabled="isLoading"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span v-if="isLoading">Signing up...</span>
+                        <span v-else>Sign up</span>
                     </button>
                 </div>
 

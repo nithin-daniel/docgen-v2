@@ -86,6 +86,14 @@
                                 ]">
                                     <i class="fas fa-video mr-2"></i>Online
                                 </button>
+                                <button type="button" @click="formData.mode = 'hybrid'" :class="[
+                                    'flex-1 py-2 px-4 text-base font-normal rounded-lg transition-all duration-300',
+                                    formData.mode === 'hybrid'
+                                        ? 'bg-blue-600 text-white shadow-lg'
+                                        : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-blue-500'
+                                ]">
+                                    <i class="fas fa-laptop-house mr-2"></i>Hybrid
+                                </button>
                             </div>
                         </div>
 
@@ -178,7 +186,8 @@ export default {
                 brochure: [],
                 photos: [],
                 participantsText: '',
-                participantsFile: null
+                participantsFile: null,
+                certificates: []
             },
             textAreas: [
                 {
@@ -227,12 +236,23 @@ export default {
                     hint: 'Maximum 10 images allowed',
                     multiple: true,
                     maxFiles: 10
+                },
+                {
+                    id: 'certificates',
+                    label: 'Certificates (Optional)',
+                    icon: 'fas fa-certificate',
+                    accept: 'image/*',
+                    hint: 'Upload certificates if available',
+                    multiple: true,
+                    maxFiles: 10,
+                    required: false
                 }
             ],
             filePreview: {
                 brochure: [],
                 photos: [],
-                participants: []
+                participants: [],
+                certificates: []
             }
         }
     },

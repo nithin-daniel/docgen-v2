@@ -67,9 +67,17 @@
                         </div>
 
                         <!-- Mode Selection -->
-                        <div class="bg-gray-50 p-5 rounded-xl border border-gray-100 shadow-sm">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Mode</label>
-                            <div class="flex space-x-2">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Mode of Activity</label>
+                            <div class="flex space-x-4">
+                                <button type="button" @click="formData.mode = 'online'" :class="[
+                                    'flex-1 py-2 px-4 text-base font-normal rounded-lg transition-all duration-300',
+                                    formData.mode === 'online'
+                                        ? 'bg-blue-600 text-white shadow-lg'
+                                        : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-blue-500'
+                                ]">
+                                    <i class="fas fa-globe mr-2"></i>Online
+                                </button>
                                 <button type="button" @click="formData.mode = 'offline'" :class="[
                                     'flex-1 py-2 px-4 text-base font-normal rounded-lg transition-all duration-300',
                                     formData.mode === 'offline'
@@ -77,14 +85,6 @@
                                         : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-blue-500'
                                 ]">
                                     <i class="fas fa-building mr-2"></i>Offline
-                                </button>
-                                <button type="button" @click="formData.mode = 'online'" :class="[
-                                    'flex-1 py-2 px-4 text-base font-normal rounded-lg transition-all duration-300',
-                                    formData.mode === 'online'
-                                        ? 'bg-blue-600 text-white shadow-lg'
-                                        : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-blue-500'
-                                ]">
-                                    <i class="fas fa-video mr-2"></i>Online
                                 </button>
                                 <button type="button" @click="formData.mode = 'hybrid'" :class="[
                                     'flex-1 py-2 px-4 text-base font-normal rounded-lg transition-all duration-300',
@@ -169,104 +169,174 @@
 </template>
 
 <script>
+import { ref } from 'vue';
+import axios from 'axios';
+import { useAuthStore } from '../stores/auth';
+
 export default {
     name: 'DocForm',
-    data() {
-        return {
-            formData: {
-                title: '',
-                date: '',
-                department: '',
-                studentCount: 0,
-                facultyCount: 0,
-                mode: 'offline',
-                report: '',
-                feedback: '',
-                outcome: '',
-                brochure: [],
-                photos: [],
-                participantsText: '',
-                participantsFile: null,
-                certificates: []
-            },
-            textAreas: [
-                {
-                    id: 'report',
-                    label: 'Activity Report',
-                    icon: 'fas fa-file-alt',
-                    placeholder: 'Describe the activity in detail...'
-                },
-                {
-                    id: 'feedback',
-                    label: 'Feedback Received',
-                    icon: 'fas fa-comments',
-                    placeholder: 'Enter participant feedback...'
-                },
-                {
-                    id: 'outcome',
-                    label: 'Programme Outcome',
-                    icon: 'fas fa-chart-line',
-                    placeholder: 'Describe the outcomes achieved...'
-                }
-            ],
-            fileUploads: [
-                {
-                    id: 'brochure',
-                    label: 'Brochure Images',
-                    icon: 'fas fa-file-image',
-                    accept: 'image/*',
-                    hint: 'Maximum 2 images allowed',
-                    multiple: true,
-                    maxFiles: 2
-                },
-                {
-                    id: 'photos',
-                    label: 'Event Photographs',
-                    icon: 'fas fa-camera',
-                    accept: 'image/*',
-                    hint: 'Maximum 3 images allowed',
-                    multiple: true,
-                    maxFiles: 3
-                },
-                {
-                    id: 'participants',
-                    label: 'Participants List',
-                    icon: 'fas fa-users',
-                    accept: 'image/*',
-                    hint: 'Maximum 10 images allowed',
-                    multiple: true,
-                    maxFiles: 10
-                },
-                {
-                    id: 'certificates',
-                    label: 'Certificates (Optional)',
-                    icon: 'fas fa-certificate',
-                    accept: 'image/*',
-                    hint: 'Upload certificates if available',
-                    multiple: true,
-                    maxFiles: 10,
-                    required: false
-                }
-            ],
-            filePreview: {
-                brochure: [],
-                photos: [],
-                participants: [],
-                certificates: []
-            }
-        }
-    },
-    methods: {
-        triggerFileInput(uploadId) {
-            const upload = this.fileUploads.find(u => u.id === uploadId);
-            if (upload && upload.ref) {
-                upload.ref.click();
-            }
-        },
+    setup() {
+        const authStore = useAuthStore();
+        const formData = ref({
+            title: 'Annual Technical Symposium 2024',
+            date: '2024-03-15',
+            department: 'Computer Science Department',
+            studentCount: 150,
+            facultyCount: 10,
+            mode: 'online',
+            report: 'The Annual Technical Symposium was a grand success with participation from various departments. The event featured keynote speeches, technical paper presentations, and hands-on workshops. Students showcased their innovative projects and research work.',
+            feedback: 'Participants found the event highly informative and engaging. The workshops were particularly well-received, with many students requesting more such hands-on sessions in the future. The organization and execution were praised by both students and faculty.',
+            outcome: 'The symposium successfully achieved its objectives of promoting technical knowledge sharing and fostering innovation. Several students formed new research collaborations, and many expressed interest in pursuing further research in their respective fields.',
+            brochure: [],
+            photos: [],
+            participantsText: 'John Doe, Jane Smith, Robert Johnson, Sarah Williams, Michael Brown, Emily Davis, David Wilson, Jennifer Taylor, Thomas Anderson, Lisa Martinez',
+            participantsFile: null,
+            certificates: []
+        });
 
-        handleFileUpload(event, uploadId) {
+        const textAreas = ref([
+            {
+                id: 'report',
+                label: 'Activity Report',
+                icon: 'fas fa-file-alt',
+                placeholder: 'Describe the activity in detail...'
+            },
+            {
+                id: 'feedback',
+                label: 'Feedback Received',
+                icon: 'fas fa-comments',
+                placeholder: 'Enter participant feedback...'
+            },
+            {
+                id: 'outcome',
+                label: 'Programme Outcome',
+                icon: 'fas fa-chart-line',
+                placeholder: 'Describe the outcomes achieved...'
+            }
+        ]);
+
+        const filePreview = ref({
+            brochure: [],
+            photos: [],
+            participants: [],
+            certificates: []
+        });
+
+        const fileUploads = ref([
+            {
+                id: 'brochure',
+                label: 'Brochure Images',
+                icon: 'fas fa-file-image',
+                accept: 'image/*',
+                hint: 'Maximum 2 images allowed',
+                multiple: true,
+                maxFiles: 2
+            },
+            {
+                id: 'photos',
+                label: 'Event Photographs',
+                icon: 'fas fa-camera',
+                accept: 'image/*',
+                hint: 'Maximum 3 images allowed',
+                multiple: true,
+                maxFiles: 3
+            },
+            {
+                id: 'participants',
+                label: 'Participants List',
+                icon: 'fas fa-users',
+                accept: 'image/*',
+                hint: 'Maximum 10 images allowed',
+                multiple: true,
+                maxFiles: 10
+            },
+            {
+                id: 'certificates',
+                label: 'Certificates (Optional)',
+                icon: 'fas fa-certificate',
+                accept: 'image/*',
+                hint: 'Upload certificates if available',
+                multiple: true,
+                maxFiles: 10,
+                required: false
+            }
+        ]);
+
+        const uploadFile = async (file, uploadId) => {
+            try {
+                console.log('Starting file upload process for:', file.name);
+
+                // Get presigned URL from backend
+                console.log('Requesting presigned URL...');
+                const response = await axios.post(
+                    `${import.meta.env.VITE_API_URL}/upload-image/presigned-url`,
+                    { fileName: file.name },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${authStore.token}`
+                        }
+                    }
+                );
+
+                console.log('Presigned URL response:', response.data);
+                const { url, key, contentType } = response.data;
+
+                // Upload file to R2 using presigned URL
+                console.log('Uploading file to R2...');
+                const uploadResponse = await fetch(url, {
+                    method: 'PUT',
+                    body: file,
+                    headers: {
+                        'Content-Type': contentType || file.type,
+                        'x-amz-acl': 'public-read'
+                    }
+                });
+
+                if (!uploadResponse.ok) {
+                    const errorText = await uploadResponse.text();
+                    console.error('Upload failed with response:', {
+                        status: uploadResponse.status,
+                        statusText: uploadResponse.statusText,
+                        headers: Object.fromEntries(uploadResponse.headers.entries()),
+                        errorText
+                    });
+                    throw new Error(`Upload failed: ${uploadResponse.status} ${errorText}`);
+                }
+
+                console.log('File uploaded successfully');
+
+                // Store the key in formData
+                if (!formData.value[uploadId]) {
+                    formData.value[uploadId] = [];
+                }
+                formData.value[uploadId].push({
+                    key,
+                    name: file.name,
+                    type: contentType || file.type
+                });
+
+                // Create preview
+                const preview = URL.createObjectURL(file);
+                filePreview.value[uploadId].push({
+                    preview,
+                    name: file.name
+                });
+
+                return true;
+            } catch (error) {
+                console.error('Upload error details:', {
+                    message: error.message,
+                    response: error.response?.data,
+                    status: error.response?.status
+                });
+                alert(`Failed to upload ${file.name}: ${error.message}`);
+                return false;
+            }
+        };
+
+        const handleFileUpload = async (event, uploadId) => {
             const files = Array.from(event.target.files);
-            const upload = this.fileUploads.find(u => u.id === uploadId);
+            const upload = fileUploads.value.find(u => u.id === uploadId);
 
             if (!files.length) return;
 
@@ -276,47 +346,59 @@ export default {
                 return;
             }
 
-            // Create preview and store files
-            this.filePreview[uploadId] = files.map(file => ({
-                file,
-                preview: URL.createObjectURL(file)
-            }));
-
-            this.formData[uploadId] = files;
-        },
-
-        removeFile(uploadId, index) {
-            // Cleanup preview URL
-            URL.revokeObjectURL(this.filePreview[uploadId][index].preview);
-
-            // Remove file from preview and formData
-            this.filePreview[uploadId].splice(index, 1);
-            this.formData[uploadId].splice(index, 1);
-
-            // Reset input if no files remaining
-            if (this.filePreview[uploadId].length === 0) {
-                const upload = this.fileUploads.find(u => u.id === uploadId);
-                if (upload && upload.ref) {
-                    upload.ref.value = '';
+            // Upload each file
+            for (const file of files) {
+                const success = await uploadFile(file, uploadId);
+                if (!success) {
+                    alert(`Failed to upload ${file.name}`);
                 }
             }
-        },
 
-        getUploadPreview(uploadId) {
-            return this.filePreview[uploadId] || [];
-        },
+            // Reset input
+            event.target.value = '';
+        };
 
-        handleSubmit() {
-            console.log(this.formData);
-            // Add API call or other submission logic
-        }
-    },
+        const removeFile = async (uploadId, index) => {
+            // Cleanup preview URL
+            URL.revokeObjectURL(filePreview.value[uploadId][index].preview);
 
-    beforeUnmount() {
-        // Clean up object URLs to prevent memory leaks
-        Object.values(this.filePreview).forEach(files => {
-            files.forEach(file => URL.revokeObjectURL(file.preview));
-        });
+            // Remove file from preview and formData
+            filePreview.value[uploadId].splice(index, 1);
+            formData.value[uploadId].splice(index, 1);
+        };
+
+        const getUploadPreview = (uploadId) => {
+            return filePreview.value[uploadId] || [];
+        };
+
+        const triggerFileInput = (uploadId) => {
+            const upload = fileUploads.value.find(u => u.id === uploadId);
+            if (upload && upload.ref) {
+                upload.ref.click();
+            }
+        };
+
+        const handleSubmit = async () => {
+            try {
+                // Here you can submit the formData which now contains the R2 keys
+                console.log('Form data with R2 keys:', formData.value);
+                // Add your form submission logic here
+            } catch (error) {
+                console.error('Submit error:', error);
+            }
+        };
+
+        return {
+            formData,
+            textAreas,
+            fileUploads,
+            filePreview,
+            handleFileUpload,
+            removeFile,
+            getUploadPreview,
+            triggerFileInput,
+            handleSubmit
+        };
     }
 }
 </script>

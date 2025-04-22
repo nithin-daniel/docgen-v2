@@ -18,7 +18,7 @@ router.post("/presigned-url", auth, async (req, res) => {
     const contentType = getContentType(fileExtension);
 
     // Generate a unique key for the file
-    const key = `${Date.now()}-${fileName}`;
+    const key = `FormAssets/${Date.now()}-${fileName}`;
     const url = await generatePresignedUrl(key, operation);
 
     res.json({

@@ -255,8 +255,9 @@
 
                 <div class="mt-6">
                     <button @click="showModal = false"
-                        class="w-full py-2 px-4 bg-blue-600/90 hover:bg-blue-700 text-white rounded-lg transition-colors backdrop-blur-sm">
-                        Close
+                        class="w-full py-2 px-4 bg-green-600/90 hover:bg-green-700 text-white rounded-lg transition-colors backdrop-blur-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle"></i>
+                        Perfect
                     </button>
                 </div>
             </div>
@@ -532,100 +533,82 @@ Suggestions received:
             }
         };
 
+        // Update the handleSubmit function to send data to the report generation API
         const handleSubmit = async () => {
             try {
                 isLoading.value = true;
                 showModal.value = true;
+                sectionResponses.value.report.loading = true;
 
-                // Transform the form data
                 const submissionData = {
-                    ...formData.value,
-                    brochure: formData.value.brochure?.map(file => ({
-                        ...file,
-                        url: generatePublicUrl(file.key)
-                    })) || [],
-                    photos: formData.value.photos?.map(file => ({
-                        ...file,
-                        url: generatePublicUrl(file.key)
-                    })) || [],
-                    participants: formData.value.participants?.map(file => ({
-                        ...file,
-                        url: generatePublicUrl(file.key)
-                    })) || [],
-                    certificates: formData.value.certificates?.map(file => ({
-                        ...file,
-                        url: generatePublicUrl(file.key)
-                    })) || []
+                    title: formData.value.title,
+                    date: formData.value.date,
+                    department: formData.value.department,
+                    studentParticipants: formData.value.studentCount,
+                    facultyParticipants: formData.value.facultyCount,
+                    mode: formData.value.mode,
+                    regenerateCount: regenerationTimes.value.report
                 };
 
-                // Submit form data first
-                await axios.post(
-                    `${import.meta.env.VITE_API_URL}/activities`,
-                    submissionData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${authStore.token}`
-                        }
-                    }
-                );
-
-                // Make parallel API calls for each section
-                const sections = ['report', 'feedback', 'outcome'];
-
-                await Promise.all(sections.map(async (section) => {
-                    sectionResponses.value[section].loading = true;
-                    try {
-                        const response = await axios.post(
-                            `${import.meta.env.VITE_API_URL}/generate-${section}`,
-                            submissionData,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${authStore.token}`
-                                }
+                try {
+                    const response = await axios.post(
+                        `${import.meta.env.VITE_API_URL}/gemini/generate-report`,
+                        submissionData,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${authStore.token}`
                             }
-                        );
-                        sectionResponses.value[section].content = response.data.content;
-                    } catch (error) {
-                        console.error(`Error generating ${section}:`, error);
-                        sectionResponses.value[section].content = `Failed to generate ${section}. Please try again.`;
-                    } finally {
-                        sectionResponses.value[section].loading = false;
-                    }
-                }));
+                        }
+                    );
 
+                    if (response.data) {
+                        if (response.data.text) {
+                            sectionResponses.value.report.content = response.data.text;
+                        } else if (typeof response.data === 'string') {
+                            sectionResponses.value.report.content = response.data;
+                        } else {
+                            throw new Error('Unexpected response format');
+                        }
+                    } else {
+                        throw new Error('No data received from server');
+                    }
+                } catch (error) {
+                    console.error('Error generating report:', error);
+                    sectionResponses.value.report.content = 'Failed to generate report. Please try again.';
+                }
             } catch (error) {
                 console.error('Submit error:', error);
                 alert('An error occurred while submitting the form');
             } finally {
+                sectionResponses.value.report.loading = false;
                 isLoading.value = false;
             }
         };
 
+        const regenerationTimes = ref({
+            report: 0,
+            feedback: 0,
+            outcome: 0
+        });
+
         const regenerateSection = async (section) => {
             try {
                 sectionResponses.value[section].loading = true;
+                regenerationTimes.value[section]++;
+
+                // Use the same data structure as initial generation
                 const submissionData = {
-                    ...formData.value,
-                    brochure: formData.value.brochure?.map(file => ({
-                        ...file,
-                        url: generatePublicUrl(file.key)
-                    })) || [],
-                    photos: formData.value.photos?.map(file => ({
-                        ...file,
-                        url: generatePublicUrl(file.key)
-                    })) || [],
-                    participants: formData.value.participants?.map(file => ({
-                        ...file,
-                        url: generatePublicUrl(file.key)
-                    })) || [],
-                    certificates: formData.value.certificates?.map(file => ({
-                        ...file,
-                        url: generatePublicUrl(file.key)
-                    })) || []
+                    title: formData.value.title,
+                    date: formData.value.date,
+                    department: formData.value.department,
+                    studentParticipants: formData.value.studentCount,
+                    facultyParticipants: formData.value.facultyCount,
+                    mode: formData.value.mode,
+                    regenerateCount: regenerationTimes.value[section] // Include the count
                 };
 
                 const response = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/generate-${section}`,
+                    `${import.meta.env.VITE_API_URL}/gemini/generate-report`,
                     submissionData,
                     {
                         headers: {
@@ -633,7 +616,18 @@ Suggestions received:
                         }
                     }
                 );
-                sectionResponses.value[section].content = response.data.content;
+
+                if (response.data) {
+                    if (response.data.text) {
+                        sectionResponses.value[section].content = response.data.text;
+                    } else if (typeof response.data === 'string') {
+                        sectionResponses.value[section].content = response.data;
+                    } else {
+                        throw new Error('Unexpected response format');
+                    }
+                } else {
+                    throw new Error('No data received from server');
+                }
             } catch (error) {
                 console.error(`Error regenerating ${section}:`, error);
                 alert(`Failed to regenerate ${section}. Please try again.`);
@@ -656,7 +650,8 @@ Suggestions received:
             showModal,
             generatedResponse,
             sectionResponses, // Make sure this is included in the return statement
-            regenerateSection
+            regenerateSection,
+            regenerationTimes
         };
     }
 }

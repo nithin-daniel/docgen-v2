@@ -5,7 +5,7 @@ const router = express.Router();
 const userRoutes = require("./userRoutes");
 const authRoutes = require("./authRoutes");
 const uploadRoutes = require("./uploadRoutes");
-const geminiRoutes = require("./gemini");
+const geminiRoutes = require("./geminiRoutes");
 const { nanoid } = require("nanoid");
 const AWS = require("aws-sdk");
 

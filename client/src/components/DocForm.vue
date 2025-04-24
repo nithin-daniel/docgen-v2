@@ -258,8 +258,16 @@
                 </div>
 
                 <div class="mt-6">
-                    <button @click="showModal = false"
-                        class="w-full py-2 px-4 bg-green-600/80 hover:bg-green-700/90 text-white rounded-lg transition-colors backdrop-blur-sm flex items-center justify-center gap-2">
+                    <button 
+                        @click="saveDocument"
+                        :disabled="!isPerfectButtonEnabled"
+                        :class="[
+                            'w-full py-2 px-4 rounded-lg transition-colors backdrop-blur-sm flex items-center justify-center gap-2',
+                            isPerfectButtonEnabled 
+                                ? 'bg-green-600/80 hover:bg-green-700/90 text-white cursor-pointer' 
+                                : 'bg-gray-400/80 text-gray-200 cursor-not-allowed'
+                        ]"
+                    >
                         <i class="fas fa-check-circle"></i>
                         Perfect
                     </button>
@@ -417,6 +425,9 @@ Suggestions received:
             }
         ]);
 
+        // Add new ref for button state
+        const isPerfectButtonEnabled = ref(false);
+
         const generatePublicUrl = (key) => {
             return `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${key}`;
         };
@@ -537,7 +548,7 @@ Suggestions received:
             }
         };
 
-        // Update the handleSubmit function
+        // Update handleSubmit function to check all responses
         const handleSubmit = async () => {
             try {
                 isLoading.value = true;
@@ -545,6 +556,7 @@ Suggestions received:
                 sectionResponses.value.report.loading = true;
                 sectionResponses.value.feedback.loading = true;
                 sectionResponses.value.outcome.loading = true;
+                isPerfectButtonEnabled.value = false; // Disable button initially
 
                 const baseData = {
                     title: formData.value.title,
@@ -555,6 +567,7 @@ Suggestions received:
                     mode: formData.value.mode
                 };
 
+                // First generate all content
                 try {
                     const sections = ['report', 'feedback', 'outcome'];
                     const responses = await Promise.all(
@@ -574,7 +587,11 @@ Suggestions received:
                         )
                     );
 
-                    // Process responses
+                    // Check if all responses are successful
+                    const allSuccessful = responses.every(response => response.status === 200);
+                    isPerfectButtonEnabled.value = allSuccessful;
+
+                    // Process responses and update sectionResponses
                     responses.forEach((response, index) => {
                         const section = sections[index];
                         if (response.data) {
@@ -585,10 +602,12 @@ Suggestions received:
                     });
 
                 } catch (error) {
+                    isPerfectButtonEnabled.value = false;
                     console.error('Error generating content:', error);
                     alert('Failed to generate content. Please try again.');
                 }
             } catch (error) {
+                isPerfectButtonEnabled.value = false;
                 console.error('Submit error:', error);
                 alert('An error occurred while submitting the form');
             } finally {
@@ -599,10 +618,53 @@ Suggestions received:
             }
         };
 
+        // 1. Add new method for document saving
+        const saveDocument = async () => {
+            try {
+                isLoading.value = true;
+                const docData = {
+                    title: formData.value.title,
+                    date: formData.value.date,
+                    department: formData.value.department,
+                    studentCount: formData.value.studentCount,
+                    facultyCount: formData.value.facultyCount,
+                    mode: formData.value.mode,
+                    report: sectionResponses.value.report.content,
+                    feedback: sectionResponses.value.feedback.content,
+                    outcome: sectionResponses.value.outcome.content,
+                    // Convert file keys to full URLs
+                    brochure: formData.value.brochure?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
+                    photos: formData.value.photos?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
+                    participants: formData.value.participants?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
+                    certificates: formData.value.certificates?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || []
+                };
+                
+                const saveResponse = await axios.post(
+                    `${import.meta.env.VITE_API_URL}/doc/create`,
+                    docData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${authStore.token}`
+                        }
+                    }
+                );
+
+                console.log('Document saved:', saveResponse.data);
+                showModal.value = false;
+                alert('Document saved successfully!');
+            } catch (error) {
+                console.error('Error saving document:', error);
+                alert('Failed to save document. Please try again.');
+            } finally {
+                isLoading.value = false;
+            }
+        };
+
         // Update the regenerateSection function
         const regenerateSection = async (section) => {
             try {
                 sectionResponses.value[section].loading = true;
+                isPerfectButtonEnabled.value = false; // Disable button during regeneration
 
                 const submissionData = {
                     title: formData.value.title,
@@ -628,14 +690,21 @@ Suggestions received:
                     }
                 );
 
-                if (response.data) {
+                if (response.status === 200 && response.data) {
                     sectionResponses.value[section].content = typeof response.data === 'string'
                         ? response.data
                         : response.data.text || '';
+                    
+                    // Check if all sections have content
+                    const allSectionsHaveContent = ['report', 'feedback', 'outcome'].every(
+                        s => sectionResponses.value[s].content
+                    );
+                    isPerfectButtonEnabled.value = allSectionsHaveContent;
                 } else {
                     throw new Error('No data received from server');
                 }
             } catch (error) {
+                isPerfectButtonEnabled.value = false;
                 console.error(`Error regenerating ${section}:`, error);
                 alert(`Failed to regenerate ${section}. Please try again.`);
             } finally {
@@ -657,7 +726,9 @@ Suggestions received:
             showModal,
             generatedResponse,
             sectionResponses,
-            regenerateSection
+            regenerateSection,
+            saveDocument,
+            isPerfectButtonEnabled
         };
     }
 }

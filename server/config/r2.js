@@ -16,12 +16,12 @@ const generatePresignedUrl = async (
   fileType = "application/octet-stream"
 ) => {
   try {
-    console.log("Generating presigned URL with params:", {
-      bucket: process.env.R2_BUCKET_NAME,
-      key,
-      operation,
-      fileType,
-    });
+    // console.log("Generating presigned URL with params:", {
+    //   bucket: process.env.R2_BUCKET_NAME,
+    //   key,
+    //   operation,
+    //   fileType,
+    // });
 
     const params = {
       Bucket: process.env.R2_BUCKET_NAME,

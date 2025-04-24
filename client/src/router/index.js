@@ -26,13 +26,13 @@ const router = createRouter({
       path: "/superadmin",
       name: "superadmin",
       component: () => import("../components/SuperAdmin.vue"),
-      meta: { requiresAuth: true, requiresAdmin: true },
+      meta: { requiresAuth: true, requiresAdmin: true }, // Only superadmin can access
     },
     {
       path: "/admin",
       name: "admin",
       component: () => import("../components/Admin.vue"),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true }, // Both admin and regular users can access
     },
   ],
 });
@@ -41,11 +41,13 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   const isAuthenticated = authStore.isAuthenticated;
+  const isSuperAdmin = authStore.userRole === "superadmin";
   const isAdmin =
-    authStore.userRole === "admin" || authStore.userRole === "superadmin";
+    authStore.userRole === "admin" || authStore.userRole === "user";
 
   console.log("Navigation guard - Auth status:", {
     isAuthenticated,
+    isSuperAdmin,
     isAdmin,
     userRole: authStore.userRole,
     to: to.name,
@@ -55,10 +57,15 @@ router.beforeEach((to, from, next) => {
     console.log("Redirecting to login - requires auth");
     next({ name: "login" });
   } else if (to.meta.requiresGuest && isAuthenticated) {
-    console.log("Redirecting to admin - already authenticated");
-    next({ name: "admin" });
-  } else if (to.meta.requiresAdmin && !isAdmin) {
-    console.log("Redirecting to admin - requires admin");
+    // Redirect authenticated users based on their role
+    if (isSuperAdmin) {
+      next({ name: "superadmin" });
+    } else {
+      next({ name: "admin" });
+    }
+  } else if (to.meta.requiresAdmin && !isSuperAdmin) {
+    // Only allow superadmin to access superadmin route
+    console.log("Redirecting to admin - requires superadmin");
     next({ name: "admin" });
   } else {
     console.log("Proceeding to route");

@@ -652,7 +652,7 @@ Suggestions received:
             try {
                 isLoading.value = true;
                 // Get user from localStorage
-                const users = JSON.parse(localStorage.getItem('user'));
+                const users = JSON.parse(localStorage.getItem('authData'));
 
                 const docData = {
                     title: formData.value.title,
@@ -669,7 +669,7 @@ Suggestions received:
                     participants: formData.value.participants?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
                     certificates: formData.value.certificates?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
                     // Add user ID to the request
-                    user: users.id
+                    user: users.user.id
                 };
 
                 const saveResponse = await axios.post(

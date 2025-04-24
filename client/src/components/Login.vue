@@ -12,9 +12,7 @@ const error = ref('')
 const isLoading = ref(false)
 
 const handleLogin = async () => {
-  // Reset error
   error.value = ''
-
   try {
     isLoading.value = true
     const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
@@ -22,24 +20,35 @@ const handleLogin = async () => {
       password: password.value
     })
 
-    console.log('Login response:', response.data)
+    // Debug logs to see exact response structure
+    console.log('Full response:', response)
+    console.log('Response data:', response.data)
+    console.log('User object:', response.data.user)
+    console.log('User role:', response.data.user.role)
 
-    // Store auth data using the store
+    // Store auth data
     authStore.setAuthData({
       user: response.data.user,
       token: response.data.token
     })
 
-    // Get the user role from the response
-    const userRole = response.data.user.role
+    const userRole = response.data.user.role.toLowerCase() // normalize the role to lowercase
 
-    // Debug log
-    console.log('User role:', userRole)
-    console.log('User data:', response.data.user)
+    console.log('Normalized user role:', userRole)
 
-    // Redirect to admin page
-    console.log('Redirecting to admin...')
-    await router.push('/admin')
+    // Clear routing logic with logs
+    if (userRole === 'superadmin') {
+      console.log('Role is superadmin, redirecting to /superadmin')
+      await router.push('/superadmin')
+    } else if (userRole === 'admin' || userRole === 'user') {
+      console.log('Role is admin/user, redirecting to /admin')
+      await router.push('/admin')
+    } else {
+      console.error('Unknown role detected:', userRole)
+      error.value = 'Unknown user role'
+      return
+    }
+
   } catch (err) {
     console.error('Login error:', err)
     error.value = err.response?.data?.message || 'An error occurred during login'
@@ -96,7 +105,7 @@ const handleLogin = async () => {
           </div>
 
           <div class="text-sm">
-            <!-- <a href="#" class="font-medium text-blue-600 hover:text-blue-500">Forgot your password?</a> -->
+            <a href="#" class="font-medium text-blue-600 hover:text-blue-500">Forgot your password?</a>
           </div>
         </div>
 

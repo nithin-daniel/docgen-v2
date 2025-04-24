@@ -83,6 +83,56 @@ const authController = {
       res.status(500).json({ message: error.message });
     }
   },
+
+  // Super Admin Registration
+  registerSuperAdmin: async (req, res) => {
+    try {
+      const { fullName, email, password, superAdminKey } = req.body;
+
+      // Verify super admin registration key
+      if (superAdminKey !== process.env.SUPER_ADMIN_KEY) {
+        return res.status(403).json({ message: "Invalid super admin key" });
+      }
+
+      // Check if super admin already exists
+      const existingSuperAdmin = await User.findOne({ role: "superadmin" });
+      if (existingSuperAdmin) {
+        return res.status(400).json({ message: "Super admin already exists" });
+      }
+
+      // Check if email is already registered
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      // Create super admin user
+      const superAdmin = new User({
+        fullName,
+        email,
+        password,
+        role: "superadmin",
+      });
+
+      await superAdmin.save();
+
+      // Generate token
+      const token = generateToken(superAdmin._id);
+
+      res.status(201).json({
+        success: true,
+        token,
+        user: {
+          id: superAdmin._id,
+          fullName: superAdmin.fullName,
+          email: superAdmin.email,
+          role: superAdmin.role,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  },
 };
 
 module.exports = authController;

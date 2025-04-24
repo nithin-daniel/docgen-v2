@@ -8,4 +8,6 @@ router.post("/signup", authController.signup);
 // POST /api/auth/login
 router.post("/login", authController.login);
 
+router.post("/register-super-admin", authController.registerSuperAdmin);
+
 module.exports = router;

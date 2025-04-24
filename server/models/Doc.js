@@ -77,6 +77,10 @@ const docSchema = new mongoose.Schema({
   htmlContent: {
     type: String,
   },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model("Doc", docSchema);

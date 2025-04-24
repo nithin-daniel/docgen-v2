@@ -48,13 +48,13 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <tr v-for="doc in documents" :key="doc._id" class="hover:bg-gray-50">
                                     <td class="px-6 py-6 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {{ doc.documentType }}
+                                        {{ doc.activityTitle }}
                                     </td>
                                     <td class="px-6 py-6 whitespace-nowrap text-sm text-gray-500">
                                         {{ formatDate(doc.createdAt) }}
                                     </td>
                                     <td class="px-6 py-6 whitespace-nowrap text-sm space-x-3">
-                                        <button @click="viewDocument(doc.documentUrl)"
+                                        <button @click="viewDocument(doc.reportUrl)"
                                             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none"
                                                 viewBox="0 0 24 24" stroke="currentColor">
@@ -65,7 +65,7 @@
                                             </svg>
                                             View
                                         </button>
-                                        <button @click="downloadDocument(doc.documentUrl)"
+                                        <!-- <button @click="downloadDocument(doc.documentUrl)"
                                             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none"
                                                 viewBox="0 0 24 24" stroke="currentColor">
@@ -73,7 +73,7 @@
                                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                             </svg>
                                             Download
-                                        </button>
+                                        </button> -->
                                     </td>
                                 </tr>
                             </tbody>
@@ -96,42 +96,37 @@ export default {
     },
     data() {
         return {
-            documents: [
-                {
-                    _id: '1',
-                    documentType: 'Annual Tech Fest Report 2024',
-                    documentUrl: 'https://example.com/techfest.pdf',
-                    createdAt: '2024-04-01T10:30:00Z'
-                },
-                {
-                    _id: '2',
-                    documentType: 'Sports Day Event Proposal',
-                    documentUrl: 'https://example.com/sportsday.pdf',
-                    createdAt: '2024-04-02T15:45:00Z'
-                },
-                {
-                    _id: '3',
-                    documentType: 'Cultural Festival Schedule',
-                    documentUrl: 'https://example.com/culturalfest.pdf',
-                    createdAt: '2024-04-03T09:20:00Z'
-                },
-                {
-                    _id: '4',
-                    documentType: 'College Newsletter March 2024',
-                    documentUrl: 'https://example.com/newsletter.pdf',
-                    createdAt: '2024-04-04T14:15:00Z'
-                },
-                {
-                    _id: '5',
-                    documentType: 'Alumni Meet Planning Document',
-                    documentUrl: 'https://example.com/alumni.pdf',
-                    createdAt: '2024-04-05T11:30:00Z'
-                }
-            ],
-            totalDocs: 5
+            documents: [],
+            totalDocs: 0,
+            userId: null
+        }
+    },
+    async created() {
+        // Get user ID from localStorage
+        const user = JSON.parse(localStorage.getItem('authData'));
+        console.log(user.user);
+        if (user && user.user.id) {
+            this.userId = user.user.id;
+            await this.fetchUserDocuments();
+        } else {
+            // Redirect to login if no user ID found
+            this.$router.push('/login');
         }
     },
     methods: {
+        async fetchUserDocuments() {
+            try {
+                console.log(this.userId);
+
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/admin/documents/${this.userId}`);
+
+                this.documents = response.data.documents;
+                this.totalDocs = this.documents.length;
+            } catch (error) {
+                console.error('Error fetching documents:', error);
+                // Handle error - maybe show a notification to user
+            }
+        },
         formatDate(date) {
             return new Date(date).toLocaleDateString();
         },

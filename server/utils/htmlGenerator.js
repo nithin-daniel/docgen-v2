@@ -1,11 +1,5 @@
 const generateReportHtml = (doc) => {
   // Add this debug log
-  console.log("Document images:", {
-    brochure: doc.brochureImages,
-    photos: doc.eventPhotographs,
-    certificates: doc.certificates,
-    participants: doc.participantsList,
-  });
 
   // Helper functions
   const formatDate = (dateString) => {

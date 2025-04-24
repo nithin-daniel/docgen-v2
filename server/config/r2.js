@@ -36,7 +36,7 @@ const generatePresignedUrl = async (
         ? r2Client.getSignedUrl("putObject", params)
         : r2Client.getSignedUrl("getObject", params);
 
-    console.log("Successfully generated presigned URL for:", key);
+    // console.log("Successfully generated presigned URL for:", key);
     return url;
   } catch (error) {
     console.error("Detailed error information:", {
@@ -82,7 +82,7 @@ const uploadFile = async (
     };
 
     const response = await r2Client.upload(params).promise();
-    console.log("File uploaded successfully:", response);
+    // console.log("File uploaded successfully:", response);
     return `https://${process.env.R2_PUBLIC_URL}/${key}`;
   } catch (error) {
     console.error("Upload error:", error);

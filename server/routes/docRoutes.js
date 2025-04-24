@@ -62,6 +62,7 @@ router.post("/create", async (req, res) => {
     res.status(201).json({
       document: doc,
       reportUrl: publicUrl,
+      html: html,
     });
   } catch (error) {
     console.error("Document creation error:", error);

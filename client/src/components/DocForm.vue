@@ -258,19 +258,45 @@
                 </div>
 
                 <div class="mt-6">
-                    <button 
-                        @click="saveDocument"
-                        :disabled="!isPerfectButtonEnabled"
-                        :class="[
-                            'w-full py-2 px-4 rounded-lg transition-colors backdrop-blur-sm flex items-center justify-center gap-2',
-                            isPerfectButtonEnabled 
-                                ? 'bg-green-600/80 hover:bg-green-700/90 text-white cursor-pointer' 
-                                : 'bg-gray-400/80 text-gray-200 cursor-not-allowed'
-                        ]"
-                    >
+                    <button @click="saveDocument" :disabled="!isPerfectButtonEnabled" :class="[
+                        'w-full py-2 px-4 rounded-lg transition-colors backdrop-blur-sm flex items-center justify-center gap-2',
+                        isPerfectButtonEnabled
+                            ? 'bg-green-600/80 hover:bg-green-700/90 text-white cursor-pointer'
+                            : 'bg-gray-400/80 text-gray-200 cursor-not-allowed'
+                    ]">
                         <i class="fas fa-check-circle"></i>
                         Perfect
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Preview Modal -->
+        <div v-if="showReport" class="fixed inset-0 z-50 flex items-center justify-center">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+            <!-- Modal content -->
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-6xl mx-4 h-[90vh] flex flex-col">
+                <!-- Header -->
+                <div class="flex justify-between items-center p-4 border-b">
+                    <h3 class="text-xl font-semibold text-gray-800">Generated Report</h3>
+                    <div class="flex gap-2">
+                        <a @click="downloadDocx()" download
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </a>
+                        <button @click="showReport = false" class="text-gray-500 hover:text-gray-700 p-2">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- iframe container -->
+                <div class="flex-1 p-4">
+                    <iframe :src="reportUrl" class="w-full h-full rounded-lg border border-gray-200"
+                        frameborder="0"></iframe>
                 </div>
             </div>
         </div>
@@ -427,6 +453,9 @@ Suggestions received:
 
         // Add new ref for button state
         const isPerfectButtonEnabled = ref(false);
+        const reportUrl = ref('');
+        const reportdocument = ref('');
+        const showReport = ref(false);
 
         const generatePublicUrl = (key) => {
             return `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${key}`;
@@ -638,7 +667,7 @@ Suggestions received:
                     participants: formData.value.participants?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
                     certificates: formData.value.certificates?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || []
                 };
-                
+
                 const saveResponse = await axios.post(
                     `${import.meta.env.VITE_API_URL}/doc/create`,
                     docData,
@@ -650,8 +679,10 @@ Suggestions received:
                 );
 
                 console.log('Document saved:', saveResponse.data);
+                reportUrl.value = saveResponse.data.reportUrl;
+                reportdocument.value = saveResponse.data.document._id;
+                showReport.value = true;
                 showModal.value = false;
-                alert('Document saved successfully!');
             } catch (error) {
                 console.error('Error saving document:', error);
                 alert('Failed to save document. Please try again.');
@@ -694,7 +725,7 @@ Suggestions received:
                     sectionResponses.value[section].content = typeof response.data === 'string'
                         ? response.data
                         : response.data.text || '';
-                    
+
                     // Check if all sections have content
                     const allSectionsHaveContent = ['report', 'feedback', 'outcome'].every(
                         s => sectionResponses.value[s].content
@@ -711,7 +742,6 @@ Suggestions received:
                 sectionResponses.value[section].loading = false;
             }
         };
-
         return {
             formData,
             textAreas,
@@ -728,7 +758,10 @@ Suggestions received:
             sectionResponses,
             regenerateSection,
             saveDocument,
-            isPerfectButtonEnabled
+            isPerfectButtonEnabled,
+            reportUrl,
+            showReport,
+            reportdocument
         };
     }
 }

@@ -20,7 +20,7 @@ router.post("/create", async (req, res) => {
       photos = [],
       participants = [],
       certificates = [],
-      testMode = false, // Add this parameter
+      user,
     } = req.body;
 
     let doc;
@@ -39,6 +39,7 @@ router.post("/create", async (req, res) => {
       eventPhotographs: photos,
       participantsList: participants,
       certificates,
+      user: user,
     });
     doc = await newDoc.save();
 

@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const docSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   activityTitle: {
     type: String,
     required: true,

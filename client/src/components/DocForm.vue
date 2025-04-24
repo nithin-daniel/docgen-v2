@@ -651,6 +651,9 @@ Suggestions received:
         const saveDocument = async () => {
             try {
                 isLoading.value = true;
+                // Get user from localStorage
+                const users = JSON.parse(localStorage.getItem('user'));
+
                 const docData = {
                     title: formData.value.title,
                     date: formData.value.date,
@@ -661,11 +664,12 @@ Suggestions received:
                     report: sectionResponses.value.report.content,
                     feedback: sectionResponses.value.feedback.content,
                     outcome: sectionResponses.value.outcome.content,
-                    // Convert file keys to full URLs
                     brochure: formData.value.brochure?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
                     photos: formData.value.photos?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
                     participants: formData.value.participants?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
-                    certificates: formData.value.certificates?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || []
+                    certificates: formData.value.certificates?.map(file => `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${file.key}`) || [],
+                    // Add user ID to the request
+                    user: users.id
                 };
 
                 const saveResponse = await axios.post(
@@ -740,6 +744,28 @@ Suggestions received:
                 alert(`Failed to regenerate ${section}. Please try again.`);
             } finally {
                 sectionResponses.value[section].loading = false;
+            }
+        };
+        const downloadDocx = async () => {
+            try {
+                const task = ilovepdf.newTask('htmlpdf');
+
+                task.start()
+                    .then(() => {
+                        return task.addFile('https://ilovepdf.com');
+                    })
+                    .then(() => {
+                        return task.process();
+                    })
+                    .then(() => {
+                        return task.download();
+                    })
+                    .then((data) => {
+                        fs.writeFileSync('path/to/local/file_name.pdf', data);
+                    });
+            } catch (error) {
+                console.error('Error downloading document:', error);
+                alert('Failed to download document. Please try again.');
             }
         };
         return {

@@ -175,8 +175,12 @@
         </div>
 
         <!-- Response Modal -->
-        <div v-if="showModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div class="bg-white/80 backdrop-blur-md p-6 rounded-lg shadow-xl max-w-4xl w-full mx-4">
+        <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center">
+            <!-- Backdrop with blur -->
+            <div class="absolute inset-0 bg-white/20 backdrop-blur-sm"></div>
+
+            <!-- Modal content -->
+            <div class="relative bg-white/60 backdrop-blur-md p-6 rounded-lg shadow-xl max-w-4xl w-full mx-4">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-semibold text-gray-800">Generated Documentation</h3>
                     <button @click="showModal = false" class="text-gray-500 hover:text-gray-700">
@@ -185,9 +189,9 @@
                 </div>
 
                 <!-- Sections container with glass effect -->
-                <div class="space-y-6 max-h-[70vh] overflow-y-auto bg-white/50 backdrop-blur-md p-4 rounded-lg">
+                <div class="space-y-6 max-h-[70vh] overflow-y-auto bg-white/40 backdrop-blur-md p-4 rounded-lg">
                     <!-- Activity Report Section -->
-                    <div class="bg-white/40 backdrop-blur-md rounded-lg p-4 shadow-sm">
+                    <div class="bg-white/30 backdrop-blur-md rounded-lg p-4 shadow-sm">
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="text-lg font-medium text-blue-600">
                                 <i class="fas fa-file-alt mr-2"></i>Activity Report
@@ -209,7 +213,7 @@
                     </div>
 
                     <!-- Feedback Section -->
-                    <div class="bg-white/40 backdrop-blur-md rounded-lg p-4 shadow-sm">
+                    <div class="bg-white/30 backdrop-blur-md rounded-lg p-4 shadow-sm">
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="text-lg font-medium text-blue-600">
                                 <i class="fas fa-comments mr-2"></i>Feedback Received
@@ -231,7 +235,7 @@
                     </div>
 
                     <!-- Programme Outcome Section -->
-                    <div class="bg-white/40 backdrop-blur-md rounded-lg p-4 shadow-sm">
+                    <div class="bg-white/30 backdrop-blur-md rounded-lg p-4 shadow-sm">
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="text-lg font-medium text-blue-600">
                                 <i class="fas fa-chart-line mr-2"></i>Programme Outcome
@@ -255,7 +259,7 @@
 
                 <div class="mt-6">
                     <button @click="showModal = false"
-                        class="w-full py-2 px-4 bg-green-600/90 hover:bg-green-700 text-white rounded-lg transition-colors backdrop-blur-sm flex items-center justify-center gap-2">
+                        class="w-full py-2 px-4 bg-green-600/80 hover:bg-green-700/90 text-white rounded-lg transition-colors backdrop-blur-sm flex items-center justify-center gap-2">
                         <i class="fas fa-check-circle"></i>
                         Perfect
                     </button>
@@ -546,8 +550,7 @@ Suggestions received:
                     department: formData.value.department,
                     studentParticipants: formData.value.studentCount,
                     facultyParticipants: formData.value.facultyCount,
-                    mode: formData.value.mode,
-                    regenerateCount: regenerationTimes.value.report
+                    mode: formData.value.mode
                 };
 
                 try {
@@ -585,26 +588,17 @@ Suggestions received:
             }
         };
 
-        const regenerationTimes = ref({
-            report: 0,
-            feedback: 0,
-            outcome: 0
-        });
-
         const regenerateSection = async (section) => {
             try {
                 sectionResponses.value[section].loading = true;
-                regenerationTimes.value[section]++;
 
-                // Use the same data structure as initial generation
                 const submissionData = {
                     title: formData.value.title,
                     date: formData.value.date,
                     department: formData.value.department,
                     studentParticipants: formData.value.studentCount,
                     facultyParticipants: formData.value.facultyCount,
-                    mode: formData.value.mode,
-                    regenerateCount: regenerationTimes.value[section] // Include the count
+                    mode: formData.value.mode
                 };
 
                 const response = await axios.post(
@@ -649,9 +643,8 @@ Suggestions received:
             isLoading,
             showModal,
             generatedResponse,
-            sectionResponses, // Make sure this is included in the return statement
-            regenerateSection,
-            regenerationTimes
+            sectionResponses,
+            regenerateSection
         };
     }
 }

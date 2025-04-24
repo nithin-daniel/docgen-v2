@@ -34,7 +34,7 @@ const handleSignup = async () => {
         localStorage.setItem('user', JSON.stringify(response.data.user))
 
         // Redirect to home page
-        router.push('/')
+        router.push('/login')
     } catch (err) {
         error.value = err.response?.data?.message || 'An error occurred during signup'
     } finally {

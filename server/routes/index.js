@@ -5,6 +5,7 @@ const router = express.Router();
 const userRoutes = require("./userRoutes");
 const authRoutes = require("./authRoutes");
 const uploadRoutes = require("./uploadRoutes");
+const geminiRoutes = require("./gemini");
 const { nanoid } = require("nanoid");
 const AWS = require("aws-sdk");
 
@@ -12,6 +13,7 @@ const AWS = require("aws-sdk");
 router.use("/users", userRoutes);
 router.use("/auth", authRoutes);
 router.use("/upload-image", uploadRoutes);
+router.use("/gemini", geminiRoutes);
 
 // Root route
 router.get("/", (req, res) => {

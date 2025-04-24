@@ -165,6 +165,102 @@
                 </div>
             </div>
         </div>
+
+        <!-- Loading Overlay -->
+        <div v-if="isLoading" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p class="text-gray-700">Generating documentation...</p>
+            </div>
+        </div>
+
+        <!-- Response Modal -->
+        <div v-if="showModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div class="bg-white/80 backdrop-blur-md p-6 rounded-lg shadow-xl max-w-4xl w-full mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">Generated Documentation</h3>
+                    <button @click="showModal = false" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Sections container with glass effect -->
+                <div class="space-y-6 max-h-[70vh] overflow-y-auto bg-white/50 backdrop-blur-md p-4 rounded-lg">
+                    <!-- Activity Report Section -->
+                    <div class="bg-white/40 backdrop-blur-md rounded-lg p-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-lg font-medium text-blue-600">
+                                <i class="fas fa-file-alt mr-2"></i>Activity Report
+                            </h4>
+                            <button @click="regenerateSection('report')"
+                                class="p-2 rounded-lg text-blue-600 hover:text-blue-800 transition-colors"
+                                title="Retry Report">
+                                <i class="fas fa-redo-alt"></i>
+                            </button>
+                        </div>
+                        <div class="relative min-h-[100px]">
+                            <div v-if="sectionResponses.report.loading"
+                                class="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-75">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                            <p v-else class="text-gray-700 whitespace-pre-line">{{ sectionResponses.report.content }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Feedback Section -->
+                    <div class="bg-white/40 backdrop-blur-md rounded-lg p-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-lg font-medium text-blue-600">
+                                <i class="fas fa-comments mr-2"></i>Feedback Received
+                            </h4>
+                            <button @click="regenerateSection('feedback')"
+                                class="p-2 rounded-lg text-blue-600 hover:text-blue-800 transition-colors"
+                                title="Retry Feedback">
+                                <i class="fas fa-redo-alt"></i>
+                            </button>
+                        </div>
+                        <div class="relative min-h-[100px]">
+                            <div v-if="sectionResponses.feedback.loading"
+                                class="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-75">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                            <p v-else class="text-gray-700 whitespace-pre-line">{{ sectionResponses.feedback.content }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Programme Outcome Section -->
+                    <div class="bg-white/40 backdrop-blur-md rounded-lg p-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-lg font-medium text-blue-600">
+                                <i class="fas fa-chart-line mr-2"></i>Programme Outcome
+                            </h4>
+                            <button @click="regenerateSection('outcome')"
+                                class="p-2 rounded-lg text-blue-600 hover:text-blue-800 transition-colors"
+                                title="Retry Outcome">
+                                <i class="fas fa-redo-alt"></i>
+                            </button>
+                        </div>
+                        <div class="relative min-h-[100px]">
+                            <div v-if="sectionResponses.outcome.loading"
+                                class="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-75">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                            <p v-else class="text-gray-700 whitespace-pre-line">{{ sectionResponses.outcome.content }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button @click="showModal = false"
+                        class="w-full py-2 px-4 bg-blue-600/90 hover:bg-blue-700 text-white rounded-lg transition-colors backdrop-blur-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -177,6 +273,60 @@ export default {
     name: 'DocForm',
     setup() {
         const authStore = useAuthStore();
+        // Add all refs at the beginning
+        const isLoading = ref(false);
+        const showModal = ref(false);
+        const generatedResponse = ref('');
+        const sectionResponses = ref({
+            report: {
+                content: `The Annual Technical Symposium 2024 was successfully conducted by the Computer Science Department on March 15, 2024. The event was conducted in online mode with active participation from 150 students and 10 faculty members.
+
+Key Highlights:
+• Technical paper presentations
+• Interactive workshops
+• Expert keynote speeches
+• Project demonstrations
+• Virtual networking sessions
+
+The event successfully leveraged virtual conferencing tools to ensure seamless interaction and engagement.`,
+                loading: false
+            },
+            feedback: {
+                content: `Participant Feedback Summary:
+
+• 95% participants rated the event organization as "Excellent"
+• Most appreciated aspects:
+  - Quality of technical presentations
+  - Interactive workshop sessions
+  - Expert speaker interactions
+
+Suggestions received:
+• Increase duration of Q&A sessions
+• Include more hands-on workshops
+• Add more industry expert sessions`,
+                loading: false
+            },
+            outcome: {
+                content: `Programme Outcomes:
+
+1. Knowledge Transfer:
+   • Enhanced technical knowledge
+   • Exposure to latest technologies
+   • Improved presentation skills
+
+2. Networking Benefits:
+   • 3 research collaborations formed
+   • 5 internship opportunities
+   • Industry connections established
+
+3. Skill Development:
+   • Virtual presentation experience
+   • Technical writing improvement
+   • Professional networking skills`,
+                loading: false
+            }
+        });
+
         const formData = ref({
             title: 'Annual Technical Symposium 2024',
             date: '2024-03-15',
@@ -261,6 +411,10 @@ export default {
                 required: false
             }
         ]);
+
+        const generatePublicUrl = (key) => {
+            return `https://${import.meta.env.VITE_R2_PUBLIC_URL}/${key}`;
+        };
 
         const uploadFile = async (file, uploadId) => {
             try {
@@ -380,11 +534,111 @@ export default {
 
         const handleSubmit = async () => {
             try {
-                // Here you can submit the formData which now contains the R2 keys
-                console.log('Form data with R2 keys:', formData.value);
-                // Add your form submission logic here
+                isLoading.value = true;
+                showModal.value = true;
+
+                // Transform the form data
+                const submissionData = {
+                    ...formData.value,
+                    brochure: formData.value.brochure?.map(file => ({
+                        ...file,
+                        url: generatePublicUrl(file.key)
+                    })) || [],
+                    photos: formData.value.photos?.map(file => ({
+                        ...file,
+                        url: generatePublicUrl(file.key)
+                    })) || [],
+                    participants: formData.value.participants?.map(file => ({
+                        ...file,
+                        url: generatePublicUrl(file.key)
+                    })) || [],
+                    certificates: formData.value.certificates?.map(file => ({
+                        ...file,
+                        url: generatePublicUrl(file.key)
+                    })) || []
+                };
+
+                // Submit form data first
+                await axios.post(
+                    `${import.meta.env.VITE_API_URL}/activities`,
+                    submissionData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${authStore.token}`
+                        }
+                    }
+                );
+
+                // Make parallel API calls for each section
+                const sections = ['report', 'feedback', 'outcome'];
+
+                await Promise.all(sections.map(async (section) => {
+                    sectionResponses.value[section].loading = true;
+                    try {
+                        const response = await axios.post(
+                            `${import.meta.env.VITE_API_URL}/generate-${section}`,
+                            submissionData,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${authStore.token}`
+                                }
+                            }
+                        );
+                        sectionResponses.value[section].content = response.data.content;
+                    } catch (error) {
+                        console.error(`Error generating ${section}:`, error);
+                        sectionResponses.value[section].content = `Failed to generate ${section}. Please try again.`;
+                    } finally {
+                        sectionResponses.value[section].loading = false;
+                    }
+                }));
+
             } catch (error) {
                 console.error('Submit error:', error);
+                alert('An error occurred while submitting the form');
+            } finally {
+                isLoading.value = false;
+            }
+        };
+
+        const regenerateSection = async (section) => {
+            try {
+                sectionResponses.value[section].loading = true;
+                const submissionData = {
+                    ...formData.value,
+                    brochure: formData.value.brochure?.map(file => ({
+                        ...file,
+                        url: generatePublicUrl(file.key)
+                    })) || [],
+                    photos: formData.value.photos?.map(file => ({
+                        ...file,
+                        url: generatePublicUrl(file.key)
+                    })) || [],
+                    participants: formData.value.participants?.map(file => ({
+                        ...file,
+                        url: generatePublicUrl(file.key)
+                    })) || [],
+                    certificates: formData.value.certificates?.map(file => ({
+                        ...file,
+                        url: generatePublicUrl(file.key)
+                    })) || []
+                };
+
+                const response = await axios.post(
+                    `${import.meta.env.VITE_API_URL}/generate-${section}`,
+                    submissionData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${authStore.token}`
+                        }
+                    }
+                );
+                sectionResponses.value[section].content = response.data.content;
+            } catch (error) {
+                console.error(`Error regenerating ${section}:`, error);
+                alert(`Failed to regenerate ${section}. Please try again.`);
+            } finally {
+                sectionResponses.value[section].loading = false;
             }
         };
 
@@ -397,7 +651,12 @@ export default {
             removeFile,
             getUploadPreview,
             triggerFileInput,
-            handleSubmit
+            handleSubmit,
+            isLoading,
+            showModal,
+            generatedResponse,
+            sectionResponses, // Make sure this is included in the return statement
+            regenerateSection
         };
     }
 }

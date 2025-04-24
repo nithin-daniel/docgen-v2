@@ -1,9 +1,9 @@
 const express = require("express");
 const Doc = require("../models/Doc");
-
+const generateReportHtml = require("../utils/htmlGenerator");
+const { uploadFile } = require("../config/r2"); // Add this import
 const router = express.Router();
 
-// POST route to create a new document
 router.post("/create", async (req, res) => {
   try {
     const {
@@ -20,8 +20,11 @@ router.post("/create", async (req, res) => {
       photos = [],
       participants = [],
       certificates = [],
+      testMode = false, // Add this parameter
     } = req.body;
 
+    let doc;
+    // Create and save new document
     const newDoc = new Doc({
       activityTitle: title,
       activityDate: date,
@@ -37,9 +40,29 @@ router.post("/create", async (req, res) => {
       participantsList: participants,
       certificates,
     });
+    doc = await newDoc.save();
 
-    const savedDoc = await newDoc.save();
-    res.status(201).json(savedDoc);
+    // Generate HTML and upload
+    const html = await generateReportHtml(doc);
+    const safeTitle = doc.activityTitle
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9\-]/g, "")
+      .toLowerCase();
+    const fileName = `${safeTitle}-report.html`;
+    const key = `reports/${Date.now()}-${fileName}`;
+
+    await uploadFile(key, html, "text/html");
+    const publicUrl = `https://${process.env.R2_PUBLIC_URL}/${key}`;
+
+    // Update document with URL and HTML content
+    doc.reportUrl = publicUrl;
+    doc.htmlContent = html;
+    await doc.save();
+
+    res.status(201).json({
+      document: doc,
+      reportUrl: publicUrl,
+    });
   } catch (error) {
     console.error("Document creation error:", error);
     res.status(400).json({
@@ -48,5 +71,20 @@ router.post("/create", async (req, res) => {
     });
   }
 });
+
+// router.get("/get-doc", async (req, res) => {
+//   try {
+//     const data = await Doc.findById("680a1dd2da771e2a36ac1b47");
+//     res.json({
+//       data: data,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching document:", error);
+//     res.status(500).json({
+//       message: "Error fetching document",
+//       details: error.message,
+//     });
+//   }
+// });
 
 module.exports = router;

@@ -60,20 +60,30 @@ const generatePresignedUrl = async (
   }
 };
 
-const uploadFile = async (file, key) => {
+const uploadFile = async (
+  key,
+  data,
+  contentType = "application/octet-stream"
+) => {
   try {
-    const fileType = file.mimetype || "application/octet-stream";
+    // Handle both Buffer and String data
+    const body = Buffer.isBuffer(data)
+      ? data
+      : data.buffer
+      ? data.buffer
+      : Buffer.from(data);
+
     const params = {
       Bucket: process.env.R2_BUCKET_NAME,
       Key: key,
-      Body: file.buffer,
-      ContentType: fileType,
+      Body: body,
+      ContentType: contentType,
       ACL: "public-read",
     };
 
     const response = await r2Client.upload(params).promise();
     console.log("File uploaded successfully:", response);
-    return `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${key}`;
+    return `https://${process.env.R2_PUBLIC_URL}/${key}`;
   } catch (error) {
     console.error("Upload error:", error);
     throw error;

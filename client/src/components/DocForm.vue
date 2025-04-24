@@ -537,14 +537,16 @@ Suggestions received:
             }
         };
 
-        // Update the handleSubmit function to send data to the report generation API
+        // Update the handleSubmit function
         const handleSubmit = async () => {
             try {
                 isLoading.value = true;
                 showModal.value = true;
                 sectionResponses.value.report.loading = true;
+                sectionResponses.value.feedback.loading = true;
+                sectionResponses.value.outcome.loading = true;
 
-                const submissionData = {
+                const baseData = {
                     title: formData.value.title,
                     date: formData.value.date,
                     department: formData.value.department,
@@ -554,40 +556,50 @@ Suggestions received:
                 };
 
                 try {
-                    const response = await axios.post(
-                        `${import.meta.env.VITE_API_URL}/gemini/generate-report`,
-                        submissionData,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${authStore.token}`
-                            }
-                        }
+                    const sections = ['report', 'feedback', 'outcome'];
+                    const responses = await Promise.all(
+                        sections.map(section =>
+                            axios.post(
+                                `${import.meta.env.VITE_API_URL}/gemini/generate-${section}`,
+                                {
+                                    ...baseData,
+                                    content: formData.value[section]
+                                },
+                                {
+                                    headers: {
+                                        Authorization: `Bearer ${authStore.token}`
+                                    }
+                                }
+                            )
+                        )
                     );
 
-                    if (response.data) {
-                        if (response.data.text) {
-                            sectionResponses.value.report.content = response.data.text;
-                        } else if (typeof response.data === 'string') {
-                            sectionResponses.value.report.content = response.data;
-                        } else {
-                            throw new Error('Unexpected response format');
+                    // Process responses
+                    responses.forEach((response, index) => {
+                        const section = sections[index];
+                        if (response.data) {
+                            sectionResponses.value[section].content = typeof response.data === 'string'
+                                ? response.data
+                                : response.data.text || '';
                         }
-                    } else {
-                        throw new Error('No data received from server');
-                    }
+                    });
+
                 } catch (error) {
-                    console.error('Error generating report:', error);
-                    sectionResponses.value.report.content = 'Failed to generate report. Please try again.';
+                    console.error('Error generating content:', error);
+                    alert('Failed to generate content. Please try again.');
                 }
             } catch (error) {
                 console.error('Submit error:', error);
                 alert('An error occurred while submitting the form');
             } finally {
                 sectionResponses.value.report.loading = false;
+                sectionResponses.value.feedback.loading = false;
+                sectionResponses.value.outcome.loading = false;
                 isLoading.value = false;
             }
         };
 
+        // Update the regenerateSection function
         const regenerateSection = async (section) => {
             try {
                 sectionResponses.value[section].loading = true;
@@ -598,11 +610,16 @@ Suggestions received:
                     department: formData.value.department,
                     studentParticipants: formData.value.studentCount,
                     facultyParticipants: formData.value.facultyCount,
-                    mode: formData.value.mode
+                    mode: formData.value.mode,
+                    // Use a common content field with the current section's content
+                    content: formData.value[section],
+                    type: "Make it more better"
                 };
 
+                const endpoint = `${import.meta.env.VITE_API_URL}/gemini/generate-${section}`;
+
                 const response = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/gemini/generate-report`,
+                    endpoint,
                     submissionData,
                     {
                         headers: {
@@ -612,13 +629,9 @@ Suggestions received:
                 );
 
                 if (response.data) {
-                    if (response.data.text) {
-                        sectionResponses.value[section].content = response.data.text;
-                    } else if (typeof response.data === 'string') {
-                        sectionResponses.value[section].content = response.data;
-                    } else {
-                        throw new Error('Unexpected response format');
-                    }
+                    sectionResponses.value[section].content = typeof response.data === 'string'
+                        ? response.data
+                        : response.data.text || '';
                 } else {
                     throw new Error('No data received from server');
                 }
